@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasi-Neutrality Balance | Zi-US Research</title>
+    <meta name="description" content="Interactive game demonstrating macroscopic electrical neutrality in plasma">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500&display=swap');
+        
+        :root {
+            --primary: #000000;
+            --secondary: #1a1a1a;
+            --accent: #0066ff;
+            --danger: #ff3366;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --purple: #8b5cf6;
+            --pink: #ec4899;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-400: #ced4da;
+            --gray-500: #adb5bd;
+            --gray-600: #6c757d;
+            --gray-700: #495057;
+            --gray-800: #343a40;
+            --gray-900: #212529;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 62.5%;
+        }
+
+        body {
+            font-family: 'Calibri Light', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 300;
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: var(--primary);
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Game Container */
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .game-header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1.6rem 2rem;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-title {
+            font-size: 2rem;
+            font-weight: 200;
+            color: white;
+            letter-spacing: 0.05em;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            transition: opacity 0.2s ease;
+        }
+
+        .back-link:hover {
+            opacity: 0.7;
+        }
+
+        /* Game Area */
+        .game-area {
+            flex: 1;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Main Canvas */
+        .main-canvas-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #gameCanvas {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            box-shadow: 0 0 40px rgba(0, 102, 255, 0.3);
+        }
+
+        /* Control Sidebar */
+        .control-sidebar {
+            width: 360px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        /* Balance Meter */
+        .balance-meter {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.8rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .balance-title {
+            font-size: 1.4rem;
+            color: white;
+            margin-bottom: 1.6rem;
+            text-align: center;
+        }
+
+        .balance-display {
+            position: relative;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .balance-bar {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .positive-bar {
+            left: 50%;
+            background: linear-gradient(90deg, transparent, var(--danger));
+        }
+
+        .negative-bar {
+            right: 50%;
+            background: linear-gradient(-90deg, transparent, var(--accent));
+        }
+
+        .balance-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 4px;
+            height: 120%;
+            background: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .balance-value {
+            text-align: center;
+            font-size: 1.8rem;
+            color: white;
+            margin-top: 1rem;
+        }
+
+        .balance-status {
+            text-align: center;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        .status-neutral {
+            color: var(--success);
+        }
+
+        .status-imbalanced {
+            color: var(--warning);
+        }
+
+        /* Score Panel */
+        .score-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.8rem;
+            padding: 1.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .score-value {
+            color: white;
+            font-weight: 400;
+        }
+
+        /* Particle Spawner */
+        .particle-spawner {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.8rem;
+            padding: 1.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .spawner-title {
+            font-size: 1.3rem;
+            color: white;
+            margin-bottom: 1.6rem;
+        }
+
+        .spawner-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .spawn-btn {
+            padding: 2rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .spawn-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .spawn-btn.positive {
+            border-color: var(--danger);
+        }
+
+        .spawn-btn.positive:hover {
+            background: rgba(255, 51, 102, 0.2);
+            box-shadow: 0 4px 20px rgba(255, 51, 102, 0.3);
+        }
+
+        .spawn-btn.negative {
+            border-color: var(--accent);
+        }
+
+        .spawn-btn.negative:hover {
+            background: rgba(0, 102, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(0, 102, 255, 0.3);
+        }
+
+        .spawn-icon {
+            font-size: 3rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .spawn-label {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Power Actions */
+        .power-actions {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.8rem;
+            padding: 1.6rem;
+        }
+
+        .action-title {
+            font-size: 1.3rem;
+            color: white;
+            margin-bottom: 1.6rem;
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-btn.ready {
+            border-color: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Tutorial Overlay */
+        .tutorial-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .tutorial-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .tutorial-content {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            padding: 3rem;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .tutorial-title {
+            font-size: 2.4rem;
+            color: white;
+            margin-bottom: 1.6rem;
+            font-weight: 200;
+        }
+
+        .tutorial-text {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.8;
+            margin-bottom: 2rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.8rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 400;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+            letter-spacing: 0.02em;
+            border-radius: 0.2rem;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Level Progress */
+        .level-progress {
+            position: absolute;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.8rem;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .level-text {
+            font-size: 1.2rem;
+            color: white;
+        }
+
+        .level-bar {
+            width: 200px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .level-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--purple));
+            transition: width 0.3s ease;
+        }
+
+        /* Victory Screen */
+        .victory-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .victory-screen.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .victory-content {
+            text-align: center;
+            animation: victoryPulse 1s ease-out;
+        }
+
+        @keyframes victoryPulse {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .victory-title {
+            font-size: 4rem;
+            color: white;
+            margin-bottom: 1rem;
+            font-weight: 200;
+        }
+
+        .victory-score {
+            font-size: 2.4rem;
+            color: var(--accent);
+            margin-bottom: 2rem;
+        }
+
+        .victory-text {
+            font-size: 1.4rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 3rem;
+            max-width: 500px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .control-sidebar {
+                display: none;
+            }
+
+            .game-area {
+                flex-direction: column;
+            }
+
+            .main-canvas-container {
+                padding: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <div class="game-header">
+            <div class="header-content">
+                <h1 class="game-title">Quasi-Neutrality: Maintaining Plasma Balance</h1>
+                <a href="index.html" class="back-link">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    Back to Overview
+                </a>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div class="game-area">
+            <!-- Main Canvas -->
+            <div class="main-canvas-container">
+                <canvas id="gameCanvas" width="800" height="600"></canvas>
+                
+                <!-- Level Progress -->
+                <div class="level-progress">
+                    <span class="level-text">Level <span id="currentLevel">1</span></span>
+                    <div class="level-bar">
+                        <div class="level-fill" id="levelFill" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Sidebar -->
+            <div class="control-sidebar">
+                <!-- Balance Meter -->
+                <div class="balance-meter">
+                    <h3 class="balance-title">Plasma Balance</h3>
+                    <div class="balance-display">
+                        <div class="positive-bar" id="positiveBar" style="width: 0%"></div>
+                        <div class="negative-bar" id="negativeBar" style="width: 0%"></div>
+                        <div class="balance-indicator"></div>
+                    </div>
+                    <div class="balance-value" id="balanceValue">0</div>
+                    <div class="balance-status status-neutral" id="balanceStatus">Perfectly Balanced</div>
+                </div>
+
+                <!-- Score Panel -->
+                <div class="score-panel">
+                    <div class="score-item">
+                        <span>Score</span>
+                        <span class="score-value" id="score">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span>Time Balanced</span>
+                        <span class="score-value"><span id="timeBalanced">0</span>s</span>
+                    </div>
+                    <div class="score-item">
+                        <span>Particles</span>
+                        <span class="score-value" id="particleCount">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span>Perfect Streaks</span>
+                        <span class="score-value" id="streakCount">0</span>
+                    </div>
+                </div>
+
+                <!-- Particle Spawner -->
+                <div class="particle-spawner">
+                    <h3 class="spawner-title">Add Particles</h3>
+                    <div class="spawner-grid">
+                        <div class="spawn-btn positive" onclick="spawnParticle('positive')">
+                            <div class="spawn-icon" style="color: #ff3366;">⊕</div>
+                            <div class="spawn-label">Positive Ion</div>
+                        </div>
+                        <div class="spawn-btn negative" onclick="spawnParticle('negative')">
+                            <div class="spawn-icon" style="color: #0066ff;">⊖</div>
+                            <div class="spawn-label">Electron</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Power Actions -->
+                <div class="power-actions">
+                    <h3 class="action-title">Special Actions</h3>
+                    <button class="action-btn" id="redistributeBtn" onclick="redistributeCharges()">
+                        <span>⚡</span> Redistribute Charges
+                    </button>
+                    <button class="action-btn" id="screeningBtn" onclick="activateScreening()">
+                        <span>🛡️</span> Debye Screening
+                    </button>
+                    <button class="action-btn" id="waveBtn" onclick="createPlasmaWave()">
+                        <span>〰️</span> Plasma Wave
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tutorial Overlay -->
+        <div class="tutorial-overlay active" id="tutorialOverlay">
+            <div class="tutorial-content">
+                <h2 class="tutorial-title">Quasi-Neutrality Challenge</h2>
+                <p class="tutorial-text">
+                    Maintain electrical neutrality in the plasma by balancing positive ions and electrons. 
+                    The plasma must remain quasi-neutral (equal positive and negative charges) to stay stable.
+                </p>
+                <p class="tutorial-text">
+                    Click to add particles and use special actions to redistribute charges when needed. 
+                    Keep the balance meter centered to score points!
+                </p>
+                <button class="btn btn-primary" onclick="startGame()">Start Game</button>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div class="victory-screen" id="victoryScreen">
+            <div class="victory-content">
+                <h2 class="victory-title">Level Complete!</h2>
+                <div class="victory-score">Score: <span id="finalScore">0</span></div>
+                <p class="victory-text">
+                    Excellent work maintaining quasi-neutrality! You've mastered the balance of charges in plasma.
+                </p>
+                <button class="btn btn-primary" onclick="nextLevel()">Next Level</button>
+                <a href="index.html" class="btn">Back to Overview</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game Configuration
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game State
+        let gameState = {
+            level: 1,
+            score: 0,
+            timeBalanced: 0,
+            streakCount: 0,
+            currentStreak: 0,
+            particles: [],
+            balance: 0,
+            targetBalance: 0,
+            isRunning: false,
+            lastTime: Date.now(),
+            specialActions: {
+                redistribute: { available: true, cooldown: 0 },
+                screening: { available: true, cooldown: 0 },
+                wave: { available: true, cooldown: 0 }
+            },
+            levelProgress: 0,
+            levelTarget: 100,
+            autoSpawnRate: 2000,
+            lastAutoSpawn: Date.now()
+        };
+
+        // Particle Class
+        class Particle {
+            constructor(x, y, charge) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.charge = charge; // 1 or -1
+                this.radius = 6;
+                this.color = charge > 0 ? '#ff3366' : '#0066ff';
+                this.glowRadius = 20;
+                this.age = 0;
+                this.maxAge = 1000 + Math.random() * 500;
+                this.screening = false;
+                this.waveAffected = false;
+            }
+
+            update(deltaTime) {
+                this.age += deltaTime;
+                
+                // Natural drift
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Bounce off walls
+                if (this.x < this.radius || this.x > canvas.width - this.radius) {
+                    this.vx *= -0.9;
+                    this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                }
+                if (this.y < this.radius || this.y > canvas.height - this.radius) {
+                    this.vy *= -0.9;
+                    this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                }
+                
+                // Apply inter-particle forces
+                this.applyForces();
+                
+                // Damping
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+                
+                // Decay over time
+                return this.age < this.maxAge;
+            }
+
+            applyForces() {
+                for (let other of gameState.particles) {
+                    if (other === this) continue;
+                    
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const dist = Math.hypot(dx, dy);
+                    
+                    if (dist < 150 && dist > 0) {
+                        // Coulomb force with screening
+                        let force = (this.charge * other.charge * 30) / (dist * dist);
+                        
+                        if (this.screening) {
+                            force *= Math.exp(-dist / 50); // Debye screening
+                        }
+                        
+                        this.vx -= (dx / dist) * force * 0.01;
+                        this.vy -= (dy / dist) * force * 0.01;
+                    }
+                }
+            }
+
+            draw() {
+                const opacity = Math.max(0.3, 1 - this.age / this.maxAge);
+                
+                // Glow effect
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.glowRadius);
+                gradient.addColorStop(0, this.color + Math.floor(opacity * 255).toString(16).padStart(2, '0'));
+                gradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.glowRadius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Core particle
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = opacity;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                
+                // Charge symbol
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(this.charge > 0 ? '+' : '-', this.x, this.y);
+            }
+        }
+
+        // Game Functions
+        function startGame() {
+            document.getElementById('tutorialOverlay').classList.remove('active');
+            gameState.isRunning = true;
+            gameState.lastTime = Date.now();
+            gameLoop();
+        }
+
+        function spawnParticle(type) {
+            if (!gameState.isRunning) return;
+            
+            const charge = type === 'positive' ? 1 : -1;
+            const x = Math.random() * (canvas.width - 100) + 50;
+            const y = Math.random() * (canvas.height - 100) + 50;
+            
+            gameState.particles.push(new Particle(x, y, charge));
+            updateBalance();
+        }
+
+        function autoSpawnParticles() {
+            const now = Date.now();
+            if (now - gameState.lastAutoSpawn > gameState.autoSpawnRate) {
+                // Spawn particles to create imbalance
+                const imbalanceType = Math.random() < 0.5 ? 'positive' : 'negative';
+                const count = 1 + Math.floor(Math.random() * gameState.level);
+                
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => spawnParticle(imbalanceType), i * 100);
+                }
+                
+                gameState.lastAutoSpawn = now;
+                gameState.autoSpawnRate = Math.max(1000, 3000 - gameState.level * 200);
+            }
+        }
+
+        function updateBalance() {
+            let positive = 0;
+            let negative = 0;
+            
+            for (let particle of gameState.particles) {
+                if (particle.charge > 0) positive++;
+                else negative++;
+            }
+            
+            gameState.balance = positive - negative;
+            
+            // Update UI
+            const maxImbalance = 20;
+            const balancePercent = Math.min(Math.abs(gameState.balance) / maxImbalance * 100, 100);
+            
+            if (gameState.balance > 0) {
+                document.getElementById('positiveBar').style.width = balancePercent + '%';
+                document.getElementById('negativeBar').style.width = '0%';
+            } else {
+                document.getElementById('positiveBar').style.width = '0%';
+                document.getElementById('negativeBar').style.width = balancePercent + '%';
+            }
+            
+            document.getElementById('balanceValue').textContent = gameState.balance > 0 ? '+' + gameState.balance : gameState.balance;
+            document.getElementById('particleCount').textContent = gameState.particles.length;
+            
+            // Update status
+            const statusEl = document.getElementById('balanceStatus');
+            if (Math.abs(gameState.balance) <= 2) {
+                statusEl.textContent =
